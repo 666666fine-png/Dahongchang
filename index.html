@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>凯申跳一跳</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{width:100%;height:100%;overflow:hidden;background:#a9740f;font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;user-select:none;}
-  #game{display:block;position:absolute;inset:0;cursor:pointer;touch-action:none;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+     -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;
+     -webkit-touch-callout:none;-webkit-user-drag:none;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#a9740f;
+     font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif;
+     -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;
+     -webkit-touch-callout:none;overscroll-behavior:none;}
+  #game{display:block;position:absolute;inset:0;cursor:pointer;touch-action:none;
+     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 
   .tip{position:absolute;left:0;width:100%;text-align:center;font-size:12px;letter-spacing:.5px;
        color:rgba(255,245,210,.92);text-shadow:0 1px 3px rgba(0,0,0,.45);z-index:5;cursor:pointer;
@@ -348,10 +354,31 @@ function release(){
   jump={sx:heroX,sy:heroY,sz:from.zTop,ex,ey,ez:to.zTop,t:0,dur:0.62,res};
   state='jumping';
 }
+/* ===== 彻底屏蔽长按选中文字 / 长按菜单 / 拖拽 ===== */
+function killDefault(e){ if(e.cancelable)e.preventDefault(); }
+['selectstart','contextmenu','dragstart','copy','cut'].forEach(function(t){
+  document.addEventListener(t,killDefault,{passive:false});
+});
+// iOS Safari 的长按呼出菜单与手势缩放
+document.addEventListener('gesturestart',killDefault,{passive:false});
+document.addEventListener('gesturechange',killDefault,{passive:false});
+function clearSelection(){
+  try{
+    var s=window.getSelection&&window.getSelection();
+    if(s&&s.rangeCount>0)s.removeAllRanges();
+  }catch(_){}
+}
+// 画布上再拦一层 touchstart，避免部分旧内核在 canvas 上发起选区
+canvas.addEventListener('touchstart',e=>{
+  if(e.cancelable)e.preventDefault();
+  clearSelection();
+},{passive:false});
+
 /* 统一使用 Pointer Events，避免触摸点击后合成鼠标事件误触发画面跳跃 */
 canvas.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'&&e.button!==0)return;
   e.preventDefault();
+  clearSelection();
   if(canvas.setPointerCapture){try{canvas.setPointerCapture(e.pointerId);}catch(_){}}
   pressDown();
 });
